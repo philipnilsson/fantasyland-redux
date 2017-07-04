@@ -1,30 +1,13 @@
 import { ActionTypes } from './createStore'
 import isPlainObject from 'lodash/isPlainObject'
 import warning from './utils/warning'
-
-function getUndefinedStateErrorMessage(key, action) {
-  const actionType = action && action.type
-  const actionName = (actionType && `"${actionType.toString()}"`) || 'an action'
-
-  return (
-    `Given action ${actionName}, reducer "${key}" returned undefined. ` +
-    `To ignore an action, you must explicitly return the previous state. ` +
-    `If you want this reducer to hold no value, you can return null instead of undefined.`
-  )
-}
+import Reducer from './reducer'
 
 function getUnexpectedStateShapeWarningMessage(inputState, reducers, action, unexpectedKeyCache) {
   const reducerKeys = Object.keys(reducers)
   const argumentName = action && action.type === ActionTypes.INIT ?
     'preloadedState argument passed to createStore' :
     'previous state received by the reducer'
-
-  if (reducerKeys.length === 0) {
-    return (
-      'Store does not have a valid reducer. Make sure the argument passed ' +
-      'to combineReducers is an object whose values are reducers.'
-    )
-  }
 
   if (!isPlainObject(inputState)) {
     return (
@@ -35,9 +18,16 @@ function getUnexpectedStateShapeWarningMessage(inputState, reducers, action, une
     )
   }
 
+  if (Object.keys(inputState).length === 0) {
+    return (
+      'Store does not have a valid reducer. Make sure the argument passed ' +
+      'to combineReducers is an object whose values are reducers.'
+    )
+  }
+
   const unexpectedKeys = Object.keys(inputState).filter(key =>
     !reducers.hasOwnProperty(key) &&
-    !unexpectedKeyCache[key]
+                                                             !unexpectedKeyCache[key]
   )
 
   unexpectedKeys.forEach(key => {
@@ -52,35 +42,6 @@ function getUnexpectedStateShapeWarningMessage(inputState, reducers, action, une
       `"${reducerKeys.join('", "')}". Unexpected keys will be ignored.`
     )
   }
-}
-
-function assertReducerShape(reducers) {
-  Object.keys(reducers).forEach(key => {
-    const reducer = reducers[key]
-    const initialState = reducer(undefined, { type: ActionTypes.INIT })
-
-    if (typeof initialState === 'undefined') {
-      throw new Error(
-        `Reducer "${key}" returned undefined during initialization. ` +
-        `If the state passed to the reducer is undefined, you must ` +
-        `explicitly return the initial state. The initial state may ` +
-        `not be undefined. If you don't want to set a value for this reducer, ` +
-        `you can use null instead of undefined.`
-      )
-    }
-
-    const type = '@@redux/PROBE_UNKNOWN_ACTION_' + Math.random().toString(36).substring(7).split('').join('.')
-    if (typeof reducer(undefined, { type }) === 'undefined') {
-      throw new Error(
-        `Reducer "${key}" returned undefined when probed with a random type. ` +
-        `Don't try to handle ${ActionTypes.INIT} or other actions in "redux/*" ` +
-        `namespace. They are considered private. Instead, you must return the ` +
-        `current state for any unknown actions, unless it is undefined, ` +
-        `in which case you must return the initial state, regardless of the ` +
-        `action type. The initial state may not be undefined, but can be null.`
-      )
-    }
-  })
 }
 
 /**
@@ -102,18 +63,16 @@ function assertReducerShape(reducers) {
 export default function combineReducers(reducers) {
   const reducerKeys = Object.keys(reducers)
   const finalReducers = {}
+  let init = {};
   for (let i = 0; i < reducerKeys.length; i++) {
     const key = reducerKeys[i]
 
-    if (process.env.NODE_ENV !== 'production') {
-      if (typeof reducers[key] === 'undefined') {
-        warning(`No reducer provided for key "${key}"`)
-      }
-    }
-
-    if (typeof reducers[key] === 'function') {
+    if (reducers[key] instanceof Reducer) {
       finalReducers[key] = reducers[key]
+    } else {
+      finalReducers[key] = Reducer.of(reducers[key]);
     }
+    init[key] = finalReducers[key].init;
   }
   const finalReducerKeys = Object.keys(finalReducers)
 
@@ -122,18 +81,16 @@ export default function combineReducers(reducers) {
     unexpectedKeyCache = {}
   }
 
-  let shapeAssertionError
-  try {
-    assertReducerShape(finalReducers)
-  } catch (e) {
-    shapeAssertionError = e
-  }
-
-  return function combination(state = {}, action) {
-    if (shapeAssertionError) {
-      throw shapeAssertionError
+  const present = state => {
+    let result = {};
+    for (let i = 0; i < reducerKeys.length; i++) {
+      const key = reducerKeys[i];
+      result[key] = finalReducers[key].present(state[key])
     }
+    return result;
+  };
 
+  return new Reducer(init, (state, action) => {
     if (process.env.NODE_ENV !== 'production') {
       const warningMessage = getUnexpectedStateShapeWarningMessage(state, finalReducers, action, unexpectedKeyCache)
       if (warningMessage) {
@@ -147,14 +104,10 @@ export default function combineReducers(reducers) {
       const key = finalReducerKeys[i]
       const reducer = finalReducers[key]
       const previousStateForKey = state[key]
-      const nextStateForKey = reducer(previousStateForKey, action)
-      if (typeof nextStateForKey === 'undefined') {
-        const errorMessage = getUndefinedStateErrorMessage(key, action)
-        throw new Error(errorMessage)
-      }
+      const nextStateForKey = reducer._step(previousStateForKey, action)
       nextState[key] = nextStateForKey
       hasChanged = hasChanged || nextStateForKey !== previousStateForKey
     }
     return hasChanged ? nextState : state
-  }
+  }, present)
 }

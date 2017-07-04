@@ -1,5 +1,5 @@
 import { ADD_TODO, DISPATCH_IN_MIDDLE, THROW_ERROR } from './actionTypes'
-
+import Reducer from '../../src/reducer';
 
 function id(state = []) {
   return state.reduce((result, item) => (
@@ -7,11 +7,11 @@ function id(state = []) {
   ), 0) + 1
 }
 
-export function todos(state = [], action) {
+export const todos = new Reducer([], (state, action) => {
   switch (action.type) {
     case ADD_TODO:
-      return [ 
-        ...state, 
+      return [
+        ...state,
         {
           id: id(state),
           text: action.text
@@ -20,9 +20,9 @@ export function todos(state = [], action) {
     default:
       return state
   }
-}
+});
 
-export function todosReverse(state = [], action) {
+export const todosReverse = new Reducer([], (state, action)  => {
   switch (action.type) {
     case ADD_TODO:
       return [
@@ -34,9 +34,9 @@ export function todosReverse(state = [], action) {
     default:
       return state
   }
-}
+});
 
-export function dispatchInTheMiddleOfReducer(state = [], action) {
+export const dispatchInTheMiddleOfReducer = new Reducer([], (state, action)  => {
   switch (action.type) {
     case DISPATCH_IN_MIDDLE:
       action.boundDispatchFn()
@@ -44,13 +44,13 @@ export function dispatchInTheMiddleOfReducer(state = [], action) {
     default:
       return state
   }
-}
+});
 
-export function errorThrowingReducer(state = [], action) {
+export const errorThrowingReducer = new Reducer([], (state, action) => {
   switch (action.type) {
     case THROW_ERROR:
       throw new Error()
     default:
       return state
   }
-}
+});

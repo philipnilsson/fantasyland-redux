@@ -1,5 +1,6 @@
 import isPlainObject from 'lodash/isPlainObject'
 import $$observable from 'symbol-observable'
+import Reducer from './reducer'
 
 /**
  * These are private action types reserved by Redux.
@@ -12,29 +13,30 @@ export const ActionTypes = {
 }
 
 /**
- * Creates a Redux store that holds the state tree.
- * The only way to change the data in the store is to call `dispatch()` on it.
+ * Creates a Redux store that holds the state tree.  The only way to
+ * change the data in the store is to call `dispatch()` on it.
  *
- * There should only be a single store in your app. To specify how different
- * parts of the state tree respond to actions, you may combine several reducers
- * into a single reducer function by using `combineReducers`.
+ * There should only be a single store in your app. To specify how
+ * different parts of the state tree respond to actions, you may
+ * combine several reducers into a single reducer function by using
+ * `combineReducers`.
  *
- * @param {Function} reducer A function that returns the next state tree, given
- * the current state tree and the action to handle.
+ * @param {Function} reducer A function that returns the next state
+ * tree, given the current state tree and the action to handle.
  *
- * @param {any} [preloadedState] The initial state. You may optionally specify it
- * to hydrate the state from the server in universal apps, or to restore a
- * previously serialized user session.
- * If you use `combineReducers` to produce the root reducer function, this must be
- * an object with the same shape as `combineReducers` keys.
+ * @param {any} [preloadedState] The initial state. You may optionally
+ * specify it to hydrate the state from the server in universal apps,
+ * or to restore a previously serialized user session.  If you use
+ * `combineReducers` to produce the root reducer function, this must
+ * be an object with the same shape as `combineReducers` keys.
  *
- * @param {Function} [enhancer] The store enhancer. You may optionally specify it
- * to enhance the store with third-party capabilities such as middleware,
- * time travel, persistence, etc. The only store enhancer that ships with Redux
- * is `applyMiddleware()`.
+ * @param {Function} [enhancer] The store enhancer. You may optionally
+ * specify it to enhance the store with third-party capabilities such
+ * as middleware, time travel, persistence, etc. The only store
+ * enhancer that ships with Redux is `applyMiddleware()`.
  *
- * @returns {Store} A Redux store that lets you read the state, dispatch actions
- * and subscribe to changes.
+ * @returns {Store} A Redux store that lets you read the state,
+ * dispatch actions and subscribe to changes.
  */
 export default function createStore(reducer, preloadedState, enhancer) {
   if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
@@ -50,12 +52,12 @@ export default function createStore(reducer, preloadedState, enhancer) {
     return enhancer(createStore)(reducer, preloadedState)
   }
 
-  if (typeof reducer !== 'function') {
-    throw new Error('Expected the reducer to be a function.')
+  if (!(reducer instanceof Reducer)) {
+    throw new Error('Expected the reducer to be a reducer.')
   }
 
   let currentReducer = reducer
-  let currentState = preloadedState
+  let currentState = preloadedState || reducer.init
   let currentListeners = []
   let nextListeners = currentListeners
   let isDispatching = false
@@ -72,7 +74,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * @returns {any} The current state tree of your application.
    */
   function getState() {
-    return currentState
+    return currentReducer.present(currentState)
   }
 
   /**
@@ -167,7 +169,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
 
     try {
       isDispatching = true
-      currentState = currentReducer(currentState, action)
+      currentState = currentReducer._step(currentState, action)
     } finally {
       isDispatching = false
     }
@@ -192,12 +194,11 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * @returns {void}
    */
   function replaceReducer(nextReducer) {
-    if (typeof nextReducer !== 'function') {
-      throw new Error('Expected the nextReducer to be a function.')
+    if (!(nextReducer instanceof Reducer)) {
+      throw new Error('Expected the nextReducer to be a reducer.')
     }
 
     currentReducer = nextReducer
-    dispatch({ type: ActionTypes.INIT })
   }
 
   /**
@@ -238,11 +239,6 @@ export default function createStore(reducer, preloadedState, enhancer) {
       }
     }
   }
-
-  // When a store is created, an "INIT" action is dispatched so that every
-  // reducer returns their initial state. This effectively populates
-  // the initial state tree.
-  dispatch({ type: ActionTypes.INIT })
 
   return {
     dispatch,
