@@ -5,9 +5,9 @@ import Reducer from './reducer'
 
 function getUnexpectedStateShapeWarningMessage(inputState, reducers, action, unexpectedKeyCache) {
   const reducerKeys = Object.keys(reducers)
-  const argumentName = action && action.type === ActionTypes.INIT ?
-    'preloadedState argument passed to createStore' :
-    'previous state received by the reducer'
+  const argumentName = action === ActionTypes.INIT
+                     ? 'state passed to createStore'
+                     : 'state received by the reducer'
 
   if (!isPlainObject(inputState)) {
     return (
@@ -15,19 +15,11 @@ function getUnexpectedStateShapeWarningMessage(inputState, reducers, action, une
       ({}).toString.call(inputState).match(/\s([a-z|A-Z]+)/)[1] +
       `". Expected argument to be an object with the following ` +
       `keys: "${reducerKeys.join('", "')}"`
-    )
-  }
-
-  if (Object.keys(inputState).length === 0) {
-    return (
-      'Store does not have a valid reducer. Make sure the argument passed ' +
-      'to combineReducers is an object whose values are reducers.'
-    )
+    );
   }
 
   const unexpectedKeys = Object.keys(inputState).filter(key =>
-    !reducers.hasOwnProperty(key) &&
-                                                             !unexpectedKeyCache[key]
+    !reducers.hasOwnProperty(key) && !unexpectedKeyCache[key]
   )
 
   unexpectedKeys.forEach(key => {
@@ -90,7 +82,7 @@ export default function combineReducers(reducers) {
     return result;
   };
 
-  return new Reducer(init, (state, action) => {
+  return new Reducer(init, (state = {}, action) => {
     if (process.env.NODE_ENV !== 'production') {
       const warningMessage = getUnexpectedStateShapeWarningMessage(state, finalReducers, action, unexpectedKeyCache)
       if (warningMessage) {
@@ -103,11 +95,13 @@ export default function combineReducers(reducers) {
     for (let i = 0; i < finalReducerKeys.length; i++) {
       const key = finalReducerKeys[i]
       const reducer = finalReducers[key]
-      const previousStateForKey = state[key]
-      const nextStateForKey = reducer._step(previousStateForKey, action)
+      const previousStateForKey = state[key] || init[key]
+      const nextStateForKey =
+        reducer._step(previousStateForKey, action)
       nextState[key] = nextStateForKey
       hasChanged = hasChanged || nextStateForKey !== previousStateForKey
     }
-    return hasChanged ? nextState : state
+
+    return nextState; //hasChanged ? nextState : state
   }, present)
 }

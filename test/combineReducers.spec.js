@@ -98,28 +98,34 @@ describe('Utils', () => {
 
     })
 
-    it.only('warns if input state does not match reducer shape', () => {
+    it('warns if input state does not match reducer shape', () => {
       const preSpy = console.error
       const spy = jest.fn()
       console.error = spy
-
       const reducer = combineReducers({
-        foo: new Reducer({ bar: 1 }, state => state),
-        baz: new Reducer({ qux: 3 }, state => state)
+        foo: Reducer.of({ bar: 1 }),
+        baz: Reducer.of({ qux: 3 })
       })
 
-      reducer.step()
+      const r1 = reducer.step()
       expect(spy.mock.calls.length).toBe(0)
 
-      return;
-      reducer.step({ foo: { bar: 2 } })
+      expect(r1).toEqual({
+        foo: { bar: 1 },
+        baz: { qux: 3 }
+      })
+
+      const r2 = reducer._step({ foo: { bar: 2 } })
       expect(spy.mock.calls.length).toBe(0)
+      expect(r2).toEqual({
+        foo: { bar: 2 },
+        baz: { qux: 3 }
+      })
 
       reducer.step({
         foo: { bar: 2 },
         baz: { qux: 4 }
       })
-      expect(spy.mock.calls.length).toBe(0)
 
       createStore(reducer, { bar: 2 })
       expect(spy.mock.calls[0][0]).toMatch(
@@ -136,17 +142,17 @@ describe('Utils', () => {
         /createStore has unexpected type of "Number".*keys: "foo", "baz"/
       )
 
-      reducer({ corge: 2 })
+      reducer.step({ corge: 2 })
       expect(spy.mock.calls[3][0]).toMatch(
         /Unexpected key "corge".*reducer.*instead: "foo", "baz"/
       )
 
-      reducer({ fred: 2, grault: 4 })
+      reducer.step({ fred: 2, grault: 4 })
       expect(spy.mock.calls[4][0]).toMatch(
         /Unexpected keys "fred", "grault".*reducer.*instead: "foo", "baz"/
       )
 
-      reducer(1)
+      reducer.step(1)
       expect(spy.mock.calls[5][0]).toMatch(
         /reducer has unexpected type of "Number".*keys: "foo", "baz"/
       )
@@ -160,21 +166,21 @@ describe('Utils', () => {
       const spy = jest.fn()
       console.error = spy
 
-      const foo = (state = { foo: 1 }) => state
-      const bar = (state = { bar: 2 }) => state
+      const foo = new Reducer({ foo: 1 });
+      const bar = new Reducer({ bar: 2 });
 
       expect(spy.mock.calls.length).toBe(0)
       const reducer = combineReducers({ foo, bar })
       const state = { foo: 1, bar: 2, qux: 3 }
-      reducer(state, {})
-      reducer(state, {})
-      reducer(state, {})
-      reducer(state, {})
+      reducer.step(state, {})
+      reducer.step(state, {})
+      reducer.step(state, {})
+      reducer.step(state, {})
       expect(spy.mock.calls.length).toBe(1)
-      reducer({ ...state, baz: 5 }, {})
-      reducer({ ...state, baz: 5 }, {})
-      reducer({ ...state, baz: 5 }, {})
-      reducer({ ...state, baz: 5 }, {})
+      reducer.step({ ...state, baz: 5 }, {})
+      reducer.step({ ...state, baz: 5 }, {})
+      reducer.step({ ...state, baz: 5 }, {})
+      reducer.step({ ...state, baz: 5 }, {})
       expect(spy.mock.calls.length).toBe(2)
 
       spy.mockClear()

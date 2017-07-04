@@ -58,6 +58,11 @@ export default function createStore(reducer, preloadedState, enhancer) {
 
   let currentReducer = reducer
   let currentState = preloadedState || reducer.init
+  if (process.env.NODE_ENV !== 'production') {
+    if (preloadedState) {
+      reducer._step(preloadedState, ActionTypes.INIT)
+    }
+  }
   let currentListeners = []
   let nextListeners = currentListeners
   let isDispatching = false
