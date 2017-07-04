@@ -74,6 +74,25 @@ export default class Reducer {
     return this.present(this.init)
   }
 
+  compose(r) {
+    return new Reducer(
+      { a: this.init, b: r.init },
+      (state, action) => {
+        const { a, b } = state
+        const aNext = this.update(a, action)
+        const bNext = r.update(b, this.present(aNext))
+        return (a === aNext && b === bNext)
+          ? state
+          : { a: aNext, b: bNext }
+      },
+      ({ b }) => r.present(b)
+    )
+  }
+
+  concat(r) {
+    return this.compose(r)
+  }
+
   extend(f) {
     return new Reducer(
       this.init,

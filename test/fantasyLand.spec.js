@@ -1,18 +1,18 @@
-import { createStore, Reducer, of, lift, combineReducers } from '../src/index'
+import { Reducer, of, lift, combineReducers } from '../src/index'
 
 const foo =  new Reducer(0, (state, action) => {
-  return action.type === 'foo' ? 1 : state
+  return action.type === 'foo' ? state + 1 : state
 })
 
 const bar = new Reducer(0, (state, action) => {
-  return action.type === 'bar' ? 2 : state
+  return action.type === 'bar' ? (action.value || 2) : state
 })
 
 const foobar = combineReducers({ foo, bar })
 
 function simulate(r) {
   return actions => {
-    let state = r.init;
+    let state = r.init
     const result = [ r.present(state) ]
     actions.forEach(action => {
       state = r._step(state, action)
@@ -34,8 +34,11 @@ function bisimulate (ra, rb) {
   }
 }
 
-const actions =
-      [ { type: 'foo' }, { type: 'bar' }, { type: 'bar' }]
+const actions = [
+  { type: 'foo' },
+  { type: 'bar' },
+  { type: 'bar' }
+]
 
 const duplicate = w => w.extend(x => x)
 
@@ -122,4 +125,29 @@ describe('The laws of Fantasy Land', () => {
     ])
     expect(states[2]).toBe(states[3])
   })
+
+  it('can compose reducers as semigroupoids', () => {
+
+    const r = foo
+          .map(x => ({ type: 'bar', value: x }))
+          .compose(bar)
+          .map(x => ({ x }))
+
+    const actions = [
+      { type: 'foo' },
+      { type: 'foo' },
+      { type: 'foo' },
+      { type: 'bar' }
+    ]
+
+    const result =
+          simulate(r)(actions);
+
+    expect(result).toEqual(
+      [ {x: 0}, {x: 1}, {x: 2}, {x: 3}, {x: 3} ]
+    )
+
+    expect(result[3]).toBe(result[4])
+  })
+
 })
