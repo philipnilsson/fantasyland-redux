@@ -102,7 +102,6 @@ export default function combineReducers(reducers) {
       const nextStateForKey =
         reducer._step(previousStateForKey || init[key], action)
       nextState[key] = nextStateForKey
-
       hasChanged = hasChanged
                 || nextStateForKey !== previousStateForKey
     }

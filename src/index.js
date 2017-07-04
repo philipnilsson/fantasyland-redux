@@ -4,6 +4,7 @@ import bindActionCreators from './bindActionCreators'
 import applyMiddleware from './applyMiddleware'
 import compose from './compose'
 import warning from './utils/warning'
+import Reducer, { of, lift } from './reducer'
 
 /*
 * This is a dummy function to check if the function name has been altered by minification.
@@ -26,9 +27,10 @@ if (
 }
 
 export {
+  Reducer, of, lift,
   createStore,
   combineReducers,
   bindActionCreators,
   applyMiddleware,
-  compose
+  compose,
 }
