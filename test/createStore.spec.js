@@ -462,7 +462,7 @@ describe('createStore', () => {
     expect(store.getState()).toEqual("1");
   })
 
-  it.only('maps combined reducer output', () => {
+  it('maps combined reducer output', () => {
     const baz = foo.map(i => i.toString());
     const quux = bar.map(i => i.toString());
     const store = createStore(combineReducers({

@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { combineReducers } from '../src'
-import createStore, { ActionTypes } from '../src/createStore'
+import createStore from '../src/createStore'
 import Reducer from '../src/reducer';
 
 describe('Utils', () => {
@@ -141,6 +141,7 @@ describe('Utils', () => {
       expect(spy.mock.calls[2][0]).toMatch(
         /createStore has unexpected type of "Number".*keys: "foo", "baz"/
       )
+
 
       reducer.step({ corge: 2 })
       expect(spy.mock.calls[3][0]).toMatch(

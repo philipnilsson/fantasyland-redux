@@ -84,7 +84,10 @@ export default function combineReducers(reducers) {
 
   return new Reducer(init, (state = {}, action) => {
     if (process.env.NODE_ENV !== 'production') {
-      const warningMessage = getUnexpectedStateShapeWarningMessage(state, finalReducers, action, unexpectedKeyCache)
+      const warningMessage =
+        getUnexpectedStateShapeWarningMessage(
+          state, finalReducers, action, unexpectedKeyCache
+        )
       if (warningMessage) {
         warning(warningMessage)
       }
@@ -95,13 +98,14 @@ export default function combineReducers(reducers) {
     for (let i = 0; i < finalReducerKeys.length; i++) {
       const key = finalReducerKeys[i]
       const reducer = finalReducers[key]
-      const previousStateForKey = state[key] || init[key]
+      const previousStateForKey = state[key]
       const nextStateForKey =
-        reducer._step(previousStateForKey, action)
+        reducer._step(previousStateForKey || init[key], action)
       nextState[key] = nextStateForKey
-      hasChanged = hasChanged || nextStateForKey !== previousStateForKey
-    }
 
-    return nextState; //hasChanged ? nextState : state
+      hasChanged = hasChanged
+                || nextStateForKey !== previousStateForKey
+    }
+    return hasChanged ? nextState : state;
   }, present)
 }
