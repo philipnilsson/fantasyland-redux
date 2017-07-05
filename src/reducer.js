@@ -15,7 +15,7 @@ function memo1(f) {
 
 export default class Reducer {
 
-  constructor(init, update = (s, a) => s, present = id) {
+  constructor(init, update = id, present = id) {
     this.init = init
     this.update = update
     this.present = memo1(present)
@@ -35,7 +35,7 @@ export default class Reducer {
     return new Reducer(
       this.init,
       this.update,
-      x => f(this.present(x))
+      this.present === id ? f : x => f(this.present(x))
     )
   }
 
@@ -103,6 +103,7 @@ export default class Reducer {
 }
 
 export const of = Reducer.of
+
 export const lift = f => (...reducers) => {
   return new Reducer(
     reducers.map(r => r.init),

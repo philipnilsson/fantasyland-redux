@@ -26,8 +26,14 @@ if (
   )
 }
 
+const reducer = (init, update, present) =>
+      new Reducer(init, update, present)
+
 export {
-  Reducer, of, lift,
+  Reducer,
+  reducer,
+  of,
+  lift,
   createStore,
   combineReducers,
   bindActionCreators,

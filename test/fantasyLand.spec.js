@@ -149,5 +149,4 @@ describe('The laws of Fantasy Land', () => {
 
     expect(result[3]).toBe(result[4])
   })
-
 })
