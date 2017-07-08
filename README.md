@@ -1,4 +1,67 @@
-# <a href='http://redux.js.org'><img src='https://raw.githubusercontent.com/fantasyland/fantasy-land/master/logo.png' height=60><img src='https://camo.githubusercontent.com/f28b5bc7822f1b7bb28a96d8d09e7d79169248fc/687474703a2f2f692e696d6775722e636f6d2f4a65567164514d2e706e67' height='60'></a>
+# <a href='http://redux.js.org'><img src='https://raw.githubusercontent.com/fantasyland/fantasy-land/master/logo.png' height=80><img src='https://camo.githubusercontent.com/f28b5bc7822f1b7bb28a96d8d09e7d79169248fc/687474703a2f2f692e696d6775722e636f6d2f4a65567164514d2e706e67' height='60'></a>
+
+Fantasyland Redux is a fork of Redux with a somewhat different but
+mostly compatibly implementation. In particular it works with
+`react-redux` and reducers in existing code will be automatically
+promoted into fantasyland-style by the library and does not need to
+change.
+
+The main benefit of `fantasyland-redux` is that it implements useful
+operations as set out in the
+[fantasyland](https://github.com/fantasyland/fantasy-land)
+specification.
+
+For instance this means that reducers may be mapped over as in the
+following snippet.
+
+```javascript
+import reducer from 'fantasyland-redux';
+
+const localeReducer = reducer('en-US', (locale, { type, newLocale }) => {
+  if (type === SET_LOCALE) {
+    return newLocale;
+  }
+  return locale;
+})
+
+// "derived" reducer.
+const translations = localeReducer.map(
+  locale => getTranslations(locale)
+)
+```
+
+This will produce a reducer function that can be `connect`:ed to your
+components that let's consumers view a presentation of your
+application state that contains all translations for the current
+locale. At the same time the backing state for the reducer contains
+only the locale, so if application state is seralized and rehydrated
+it will involve only the `locale` parameter.
+
+To combine multiple reducers functions use `combineReducers` as usual and `map`
+
+```javascript
+const locale = combineReducers({
+  country: countryReducer,
+  region: regionReducer
+}).map(
+  ({ country, region }) => country + '-' + region
+);
+```
+
+Or use the `lift` function
+
+```javascript
+import { lift } from 'fantasyland-redux';
+
+const makeLocale = (country, region) =>
+  country + '-' + region;
+
+const locale = lift(makeLocale)(
+  countryReducer, regionReducer
+)
+```
+
+<hr>
 
 Redux is a predictable state container for JavaScript apps.
 (If you're looking for a WordPress framework, check out [Redux Framework](https://reduxframework.com/).)
