@@ -1,17 +1,14 @@
-import { ActionTypes } from './createStore'
 import isPlainObject from 'lodash/isPlainObject'
 import warning from './utils/warning'
 import Reducer from './reducer'
+import { promote } from './reducer'
 
 function getUnexpectedStateShapeWarningMessage(inputState, reducers, action, unexpectedKeyCache) {
   const reducerKeys = Object.keys(reducers)
-  const argumentName = action === ActionTypes.INIT
-                     ? 'state passed to createStore'
-                     : 'state received by the reducer'
 
   if (!isPlainObject(inputState)) {
     return (
-      `The ${argumentName} has unexpected type of "` +
+      `Reducer has unexpected type of "` +
       ({}).toString.call(inputState).match(/\s([a-z|A-Z]+)/)[1] +
       `". Expected argument to be an object with the following ` +
       `keys: "${reducerKeys.join('", "')}"`
@@ -29,7 +26,7 @@ function getUnexpectedStateShapeWarningMessage(inputState, reducers, action, une
   if (unexpectedKeys.length > 0) {
     return (
       `Unexpected ${unexpectedKeys.length > 1 ? 'keys' : 'key'} ` +
-      `"${unexpectedKeys.join('", "')}" found in ${argumentName}. ` +
+      `"${unexpectedKeys.join('", "')}" found in reducer. ` +
       `Expected to find one of the known reducer keys instead: ` +
       `"${reducerKeys.join('", "')}". Unexpected keys will be ignored.`
     )
@@ -58,12 +55,7 @@ export default function combineReducers(reducers) {
   let init = {};
   for (let i = 0; i < reducerKeys.length; i++) {
     const key = reducerKeys[i]
-
-    if (reducers[key] instanceof Reducer) {
-      finalReducers[key] = reducers[key]
-    } else {
-      finalReducers[key] = Reducer.of(reducers[key]);
-    }
+    finalReducers[key] = promote(reducers[key])
     init[key] = finalReducers[key].init;
   }
   const finalReducerKeys = Object.keys(finalReducers)
@@ -100,7 +92,7 @@ export default function combineReducers(reducers) {
       const reducer = finalReducers[key]
       const previousStateForKey = state[key]
       const nextStateForKey =
-        reducer._step(previousStateForKey || init[key], action)
+        reducer.update(previousStateForKey || init[key], action)
       nextState[key] = nextStateForKey
       hasChanged = hasChanged
                 || nextStateForKey !== previousStateForKey

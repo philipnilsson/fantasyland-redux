@@ -1,5 +1,25 @@
+import ActionTypes from './actionTypes'
+
 const id = x => x
 
+/**
+ * Promotes a value into a reducer.
+ */
+export function promote(reducer) {
+  if (reducer instanceof Reducer) {
+    return reducer;
+  }
+  if (typeof reducer === 'function') {
+    const init = reducer(undefined, ActionTypes.INIT);
+    return new Reducer(init, reducer);
+  }
+  return Reducer.of(reducer);
+}
+
+/**
+  * Memoizes a presenter function's last input in order
+  * to make sure new objects are not producer unnecessarily
+  */
 function memo1(f) {
   let lastInput = {}
   let lastOutput
@@ -13,22 +33,16 @@ function memo1(f) {
   }
 }
 
+/**
+ * A reducer consists of an initial state, an update function
+ * and a presenter function
+ */
 export default class Reducer {
 
   constructor(init, update = id, present = id) {
     this.init = init
     this.update = update
     this.present = memo1(present)
-  }
-
-  _step(state, event) {
-    return this.update(state, event)
-  }
-
-  step(state, event) {
-    return this.present(
-      this._step(state, event)
-    )
   }
 
   map(f) {
@@ -48,6 +62,7 @@ export default class Reducer {
   }
 
   ap(r) {
+    r = promote(r)
     return new Reducer(
       { x: this.init, f: r.init },
       (state, action) => {
@@ -90,23 +105,26 @@ export default class Reducer {
   }
 
   concat(r) {
-    return this.compose(r)
+    return this.compose(promote(r))
   }
 
   extend(f) {
     return new Reducer(
       this.init,
       this.update,
-      state => f (new Reducer(state, this.update, this.present))
+      state => f(new Reducer(state, this.update, this.present))
     )
   }
 }
 
 export const of = Reducer.of
 
+/** Lifts a function that runs on "regular" arguments
+  * to work on reducers.
+  */
 export const lift = f => (...reducers) => {
   return new Reducer(
-    reducers.map(r => r.init),
+    reducers.map(r => promote(r).init),
     (state, action) => {
       let newstate = []
       let hasChanged = false

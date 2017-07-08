@@ -1,16 +1,8 @@
 import isPlainObject from 'lodash/isPlainObject'
 import $$observable from 'symbol-observable'
 import Reducer from './reducer'
-
-/**
- * These are private action types reserved by Redux.
- * For any unknown actions, you must return the current state.
- * If the current state is undefined, you must return the initial state.
- * Do not reference these action types directly in your code.
- */
-export const ActionTypes = {
-  INIT: '@@redux/INIT'
-}
+import { promote } from './reducer'
+import ActionTypes from './actionTypes'
 
 /**
  * Creates a Redux store that holds the state tree.  The only way to
@@ -39,6 +31,9 @@ export const ActionTypes = {
  * dispatch actions and subscribe to changes.
  */
 export default function createStore(reducer, preloadedState, enhancer) {
+
+  reducer = promote(reducer)
+
   if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
     enhancer = preloadedState
     preloadedState = undefined
@@ -60,7 +55,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
   let currentState = preloadedState || reducer.init
   if (process.env.NODE_ENV !== 'production') {
     if (preloadedState) {
-      reducer._step(preloadedState, ActionTypes.INIT)
+      reducer.update(preloadedState, ActionTypes.INIT)
     }
   }
   let currentListeners = []
@@ -174,7 +169,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
 
     try {
       isDispatching = true
-      currentState = currentReducer._step(currentState, action)
+      currentState = currentReducer.update(currentState, action)
     } finally {
       isDispatching = false
     }
@@ -199,10 +194,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * @returns {void}
    */
   function replaceReducer(nextReducer) {
-    if (!(nextReducer instanceof Reducer)) {
-      throw new Error('Expected the nextReducer to be a reducer.')
-    }
-
+    nextReducer = promote(nextReducer)
     currentReducer = nextReducer
   }
 

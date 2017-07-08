@@ -14,33 +14,15 @@ const bar = new Reducer(0, (state, action) => {
 })
 
 describe('createStore', () => {
+
   it('exposes the public API', () => {
     const store = createStore(combineReducers(reducers))
     const methods = Object.keys(store)
-
     expect(methods.length).toBe(4)
     expect(methods).toContain('subscribe')
     expect(methods).toContain('dispatch')
     expect(methods).toContain('getState')
     expect(methods).toContain('replaceReducer')
-  })
-
-  it('throws if reducer is not a function', () => {
-    expect(() =>
-      createStore()
-    ).toThrow()
-
-    expect(() =>
-      createStore('test')
-    ).toThrow()
-
-    expect(() =>
-      createStore({})
-    ).toThrow()
-
-    expect(() => {
-      createStore(new Reducer())
-    }).not.toThrow()
   })
 
   it('passes the initial action and the initial state', () => {
@@ -82,7 +64,6 @@ describe('createStore', () => {
         text: 'World'
       }
     ])
-
   })
 
   it('applies the reducer to the initial state', () => {
@@ -617,18 +598,6 @@ describe('createStore', () => {
 
     expect(() =>
       createStore(reducers.todos, {})
-    ).not.toThrow()
-  })
-
-  it('throws if nextReducer is not a function', () => {
-    const store = createStore(reducers.todos)
-
-    expect(() =>
-      store.replaceReducer()
-    ).toThrow('Expected the nextReducer to be a reducer.')
-
-    expect(() =>
-      store.replaceReducer(new Reducer())
     ).not.toThrow()
   })
 

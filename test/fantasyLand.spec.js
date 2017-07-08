@@ -15,7 +15,7 @@ function simulate(r) {
     let state = r.init
     const result = [ r.present(state) ]
     actions.forEach(action => {
-      state = r._step(state, action)
+      state = r.update(state, action)
       result.push(r.present(state))
     })
     return result
@@ -27,8 +27,8 @@ function bisimulate (ra, rb) {
     let sa = ra.init, sb = rb.init
     expect(ra.present(sa)).toEqual(rb.present(sb))
     actions.forEach(action => {
-      sa = ra._step(sa, action)
-      sb = rb._step(sb, action)
+      sa = ra.update(sa, action)
+      sb = rb.update(sb, action)
       expect(ra.present(sa)).toEqual(rb.present(sb))
     })
   }

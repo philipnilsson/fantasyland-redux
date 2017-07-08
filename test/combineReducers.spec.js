@@ -3,6 +3,10 @@ import { combineReducers } from '../src'
 import createStore from '../src/createStore'
 import Reducer from '../src/reducer';
 
+function run(reducer, state, input) {
+  return reducer.present(reducer.update(state, input))
+}
+
 describe('Utils', () => {
   describe('combineReducers', () => {
     it('returns a composite reducer that maps the state keys to given reducers', () => {
@@ -17,9 +21,9 @@ describe('Utils', () => {
         )
       })
 
-      const s1 = reducer.step(reducer.init, { type: 'increment' })
+      const s1 = run(reducer, reducer.init, { type: 'increment' })
       expect(s1).toEqual({ counter: 1, stack: [] })
-      const s2 = reducer.step(s1, { type: 'push', value: 'a' })
+      const s2 = run(reducer, s1, { type: 'push', value: 'a' })
       expect(s2).toEqual({ counter: 1, stack: [ 'a' ] })
     })
 
@@ -43,7 +47,7 @@ describe('Utils', () => {
       ).toEqual(expected);
 
       expect(
-        reducer.step(reducer.init, { type: 'push' })
+        run(reducer, reducer.init, { type: 'push' })
       ).toEqual(expected)
     })
 
@@ -61,7 +65,7 @@ describe('Utils', () => {
         })
       })
 
-      expect(reducer.step({ counter: 0 }, { type: increment }).counter).toEqual(1)
+      expect(run(reducer, { counter: 0 }, { type: increment }).counter).toEqual(1)
     })
 
     it('maintains referential equality if the reducers it is combining do', () => {
@@ -71,7 +75,7 @@ describe('Utils', () => {
         child3: new Reducer({})
       })
       const out = reducer.extract();
-      expect(reducer.step(reducer.init, { type: 'FOO' })).toBe(out)
+      expect(run(reducer, reducer.init, { type: 'FOO' })).toBe(out)
     })
 
     it('does not have referential equality if one of the reducers changes something', () => {
@@ -89,12 +93,12 @@ describe('Utils', () => {
       })
 
       const out = reducer.extract();
-      expect(reducer.step(reducer.init, { type: 'increment' })).not.toBe(out)
+      expect(run(reducer, reducer.init, { type: 'increment' })).not.toBe(out)
     })
 
     it('combines {} to Reducer.of({})', () => {
       const reducer = combineReducers({ })
-      expect(reducer.step({ })).toEqual({ });
+      expect(run(reducer, { })).toEqual({ });
 
     })
 
@@ -107,7 +111,7 @@ describe('Utils', () => {
         baz: Reducer.of({ qux: 3 })
       })
 
-      const r1 = reducer.step()
+      const r1 = run(reducer, )
       expect(spy.mock.calls.length).toBe(0)
 
       expect(r1).toEqual({
@@ -115,47 +119,45 @@ describe('Utils', () => {
         baz: { qux: 3 }
       })
 
-      const r2 = reducer._step({ foo: { bar: 2 } })
+      const r2 = reducer.update({ foo: { bar: 2 } })
       expect(spy.mock.calls.length).toBe(0)
       expect(r2).toEqual({
         foo: { bar: 2 },
         baz: { qux: 3 }
       })
 
-      reducer.step({
+      run(reducer, {
         foo: { bar: 2 },
         baz: { qux: 4 }
       })
 
       createStore(reducer, { bar: 2 })
       expect(spy.mock.calls[0][0]).toMatch(
-        /Unexpected key "bar".*createStore.*instead: "foo", "baz"/
+        /Unexpected key "bar".*instead: "foo", "baz"/
       )
 
       createStore(reducer, { bar: 2, qux: 4, thud: 5 })
       expect(spy.mock.calls[1][0]).toMatch(
-        /Unexpected keys "qux", "thud".*createStore.*instead: "foo", "baz"/
+        /Unexpected keys "qux", "thud".*instead: "foo", "baz"/
       )
 
       createStore(reducer, 1)
       expect(spy.mock.calls[2][0]).toMatch(
-        /createStore has unexpected type of "Number".*keys: "foo", "baz"/
+        /Reducer has unexpected type of "Number".*keys: "foo", "baz"/
       )
-
-
-      reducer.step({ corge: 2 })
+      run(reducer, { corge: 2 })
       expect(spy.mock.calls[3][0]).toMatch(
-        /Unexpected key "corge".*reducer.*instead: "foo", "baz"/
+        /Unexpected key "corge".*instead: "foo", "baz"/
       )
 
-      reducer.step({ fred: 2, grault: 4 })
+      run(reducer, { fred: 2, grault: 4 })
       expect(spy.mock.calls[4][0]).toMatch(
-        /Unexpected keys "fred", "grault".*reducer.*instead: "foo", "baz"/
+        /Unexpected keys "fred", "grault".*instead: "foo", "baz"/
       )
 
-      reducer.step(1)
+      run(reducer, 1)
       expect(spy.mock.calls[5][0]).toMatch(
-        /reducer has unexpected type of "Number".*keys: "foo", "baz"/
+        /Reducer has unexpected type of "Number".*keys: "foo", "baz"/
       )
 
       spy.mockClear()
@@ -173,15 +175,15 @@ describe('Utils', () => {
       expect(spy.mock.calls.length).toBe(0)
       const reducer = combineReducers({ foo, bar })
       const state = { foo: 1, bar: 2, qux: 3 }
-      reducer.step(state, {})
-      reducer.step(state, {})
-      reducer.step(state, {})
-      reducer.step(state, {})
+      run(reducer, state, {})
+      run(reducer, state, {})
+      run(reducer, state, {})
+      run(reducer, state, {})
       expect(spy.mock.calls.length).toBe(1)
-      reducer.step({ ...state, baz: 5 }, {})
-      reducer.step({ ...state, baz: 5 }, {})
-      reducer.step({ ...state, baz: 5 }, {})
-      reducer.step({ ...state, baz: 5 }, {})
+      run(reducer, { ...state, baz: 5 }, {})
+      run(reducer, { ...state, baz: 5 }, {})
+      run(reducer, { ...state, baz: 5 }, {})
+      run(reducer, { ...state, baz: 5 }, {})
       expect(spy.mock.calls.length).toBe(2)
 
       spy.mockClear()
