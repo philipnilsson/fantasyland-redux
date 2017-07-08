@@ -123,8 +123,9 @@ export const of = Reducer.of
   * to work on reducers.
   */
 export const lift = f => (...reducers) => {
+  reducers = reducers.map(promote)
   return new Reducer(
-    reducers.map(r => promote(r).init),
+    reducers.map(r => r.init),
     (state, action) => {
       let newstate = []
       let hasChanged = false

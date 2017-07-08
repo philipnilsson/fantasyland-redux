@@ -69,12 +69,22 @@ export default function createStore(reducer, preloadedState, enhancer) {
   }
 
   /**
+   * Reads the state tree view managed by the store.
+   *
+   * @returns {any} The current view of the state tree of your
+   * application.
+   */
+  function getState() {
+    return currentReducer.present(currentState)
+  }
+
+  /**
    * Reads the state tree managed by the store.
    *
    * @returns {any} The current state tree of your application.
    */
-  function getState() {
-    return currentReducer.present(currentState)
+  function getBackingState() {
+    return currentState
   }
 
   /**
