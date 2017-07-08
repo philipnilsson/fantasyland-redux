@@ -3,11 +3,10 @@
 Fantasyland Redux is a fork of Redux with a somewhat different but
 mostly compatibly implementation. In particular it works with
 `react-redux` and reducers in existing code will be automatically
-promoted into fantasyland-style by the library and does not need to
-change.
+promoted into fantasyland-style by the library.
 
-The main benefit of `fantasyland-redux` is that it implements useful
-operations as set out in the
+The main benefit of `fantasyland-redux` is that it implements some
+useful operations in style of the
 [fantasyland](https://github.com/fantasyland/fantasy-land)
 specification.
 
@@ -60,6 +59,8 @@ const locale = lift(makeLocale)(
   countryReducer, regionReducer
 )
 ```
+
+For more information see the documentation for regular redux below.
 
 <hr>
 
